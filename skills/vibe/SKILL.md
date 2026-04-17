@@ -1,11 +1,11 @@
 ---
 name: vibe
 description: >
-  Your AI agent's Web3 trading brain. One skill, 25+ commands for DeFi trading,
+  Your AI agent's Web3 trading brain. One skill, 30+ commands for DeFi trading,
   token launches, data providers, wallet management, token leaderboard, OpenClaw gateway,
-  and cross-chain swap execution across Solana, Base, and Ethereum.
+  EVM DeFi via Enso, and cross-chain swap execution across Solana, Base, and Ethereum.
 metadata:
-  version: "0.2.0"
+  version: "0.2.2"
 tools:
   - bash
 ---
@@ -42,7 +42,8 @@ Map user intent to the correct command:
 |-----------|--------|----------|
 | "swap", "trade", "exchange" on Solana | Solana Trading | `vibe swap-quote`, `vibe swap` |
 | "swap on Base", "swap on Ethereum", "EVM trade" | EVM Trading | `vibe evm-swap-quote`, `vibe evm-swap` |
-| "stake", "lend", "yield", "DeFi" | DeFi | `vibe defi-discover`, `vibe defi-quote`, `vibe defi-deposit` |
+| "stake", "lend", "yield", "DeFi" on Solana | DeFi (Solana) | `vibe defi-discover`, `vibe defi-quote`, `vibe defi-deposit` |
+| "park ETH", "earn yield on Base", "DeFi" on EVM | DeFi (EVM) | `vibe defi-discover --network base`, `vibe evm-defi-quote`, `vibe evm-defi-deposit` |
 | "launch token", "create token" | Token Launch | `vibe bags-launch-token` |
 | "fees", "claim fees", "my positions" | Fee Management | `vibe bags-claim-fees`, `vibe bags-positions` |
 | "market data", "smart money", "analytics", "on-chain" | Data | `vibe data-provider` |
@@ -78,7 +79,7 @@ vibe evm-swap --network base --from-asset eth --to-asset usdc --amount 0.1
 # Assets: eth, usdc, or 0x contract addresses
 ```
 
-### DeFi
+### DeFi (Solana)
 ```bash
 # Discover protocols (Solana by default)
 vibe defi-discover
@@ -94,6 +95,25 @@ vibe defi-deposit --action stake --token SOL --amount 1.0 --protocol marinade
 # Actions: stake, supply, borrow, add_liquidity
 # NOTE: Use "supply" for lending — "lend" is NOT a valid action
 # Protocols: marinade, jito, solend, marginfi, kamino, orca, raydium
+```
+
+### DeFi (EVM via Enso Finance)
+```bash
+# Discover yield opportunities on Base with APY data
+vibe defi-discover --network base
+vibe defi-discover --network base --min-apy 5.0
+vibe defi-discover --network ethereum --project aave-v3
+
+# Get DeFi quote for depositing ETH into a vault on Base
+vibe evm-defi-quote --network base --token-in eth --token-out <vault_address> --amount 0.1
+
+# Execute DeFi deposit (returns unsigned tx)
+vibe evm-defi-deposit --network base --token-in eth --token-out <vault_address> --amount 0.1
+
+# Networks: base, ethereum, arbitrum, optimism, polygon
+# token-in: 'eth' for native, or 0x contract address
+# token-out: vault/pool contract address from defi-discover results
+# Filters: --min-apy, --min-tvl, --project, --page-size
 ```
 
 ### Token Launch (bags.fm)
@@ -135,14 +155,15 @@ vibe token-info So11111111111111111111111111111111111111112  # Single token deta
 # Agent sort: roi_percent, fees_claimed, trades, tokens_launched
 ```
 
-### Wallet (requires JWT auth — `vibe auth` first)
+### Wallet (API key or JWT auth)
 ```bash
 vibe wallet-config                               # Get wallet config (network, auto-confirm)
 vibe wallet-address --network base               # Get wallet address for network
 vibe wallet-balance --network base               # Get token balances
 vibe wallet-transactions --network base --limit 20  # Transaction history
 
-# Networks: base, ethereum, solana
+# Networks: base, base-sepolia, base-mainnet, ethereum, solana, solana-mainnet
+# Auth: works with API key (Bearer pk_xxx:sk_xxx) or JWT
 ```
 
 ### OpenClaw Gateway (requires JWT auth — `vibe auth` first)
@@ -174,7 +195,7 @@ vibe swap-quote -o json -f body.data --from-token ... --to-token ... --amount ..
 
 1. **Solana amounts are in lamports** — multiply by 10^9. `1 SOL = 1000000000 lamports`. EVM amounts are human-readable: `0.1 ETH`.
 2. **Solana swaps return unsigned transactions** — the client must sign before broadcasting. EVM swaps execute directly via CDP managed wallet (no client signing).
-3. **`gateway:wallet_write` scope required** for: `swap`, `evm-swap`, `defi-deposit`, `bags-launch-token`, `bags-claim-fees`. Without it, you get 403.
+3. **`gateway:wallet_write` scope required** for: `swap`, `evm-swap`, `defi-deposit`, `evm-defi-deposit`, `bags-launch-token`, `bags-claim-fees`. Without it, you get 403.
 4. **Network names** — must be: `solana`/`solana-mainnet`, `base`, `ethereum`. Never `eth`, `sol`, `basescan`.
 5. **`data-provider` requires both `--service` and `--route`** — check `vibe data-provider --help` for valid combinations.
 6. **Solana token addresses are base58** — 32-44 chars, not hex `0x...`. EVM uses hex addresses with `0x` prefix.
@@ -186,8 +207,10 @@ vibe swap-quote -o json -f body.data --from-token ... --to-token ... --amount ..
 12. **EVM swap requires a connected wallet** — returns 400 if no wallet exists for the account on that network.
 13. **`bags-positions` requires a wallet** — returns empty if no wallet is linked.
 14. **Token leaderboard is public** — no auth needed for `vibe tokens` and `vibe token-info`.
-15. **Wallet and gateway commands require JWT auth** — use `vibe auth` to set up. Trial tokens only have read scope.
-16. **`defi-discover` accepts `--network`** — defaults to `solana`. Use `--network evm` for EVM DeFi.
+15. **Wallet commands work with API key auth** — no JWT required if you have an API key. Falls back to JWT if no API key set.
+16. **`defi-discover` accepts `--network`** — defaults to `solana`. Use `--network base` or `--network ethereum` for EVM DeFi via Enso Finance.
+17. **EVM DeFi vault addresses** — get them from `vibe defi-discover --network base`. The `address` field in results is the vault/pool contract for `--token-out`.
+18. **Enso supports 5 EVM chains** — base, ethereum, arbitrum, optimism, polygon. All use chain-specific vault addresses.
 
 ## Common Token Mints Reference
 
@@ -230,7 +253,8 @@ On error (exit code 4), check the error code:
 
 - **Base URL:** `https://api.vibe.airforce/api/vibe-tools`
 - **Auth (vibe-tools):** `Authorization: Bearer pk_xxx:sk_xxx` or `Authorization: Bearer trial_xxx`
-- **Auth (wallet/openclaw):** `Authorization: Bearer <supabase_jwt>` (obtained via `vibe auth`)
+- **Auth (wallet via gateway):** `Authorization: Bearer pk_xxx:sk_xxx` (API key) or `Authorization: Bearer <supabase_jwt>`
+- **Auth (wallet/openclaw direct):** `Authorization: Bearer <supabase_jwt>` (obtained via `vibe auth`)
 - **Response envelope:** `{ "data": {...}, "meta": { "request_id": "...", "timestamp": "..." } }`
 - **Error envelope:** `{ "error": { "code": "...", "message": "..." }, "meta": {...} }`
 - **Error codes:** `UNAUTHORIZED`, `FORBIDDEN_SCOPE`, `NOT_FOUND`, `RATE_LIMITED`, `INSUFFICIENT_CREDITS`, `VALIDATION_ERROR`, `PROVIDER_ERROR`
