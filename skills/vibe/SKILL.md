@@ -1,18 +1,18 @@
 ---
 name: vibe
 description: >
-  Your AI agent's Web3 trading brain. One skill, 12+ commands for DeFi trading,
-  token launches, data providers, wallet management, and cross-chain swap execution
-  across Solana, Base, and Ethereum.
+  Your AI agent's Web3 trading brain. One skill, 25+ commands for DeFi trading,
+  token launches, data providers, wallet management, token leaderboard, OpenClaw gateway,
+  and cross-chain swap execution across Solana, Base, and Ethereum.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 tools:
   - bash
 ---
 
 # VIBE Airforce Skill
 
-You have access to the VIBE CLI (`vibe`), a command-line tool for Web3 trading and data.
+You have access to the VIBE CLI (`vibe`), a command-line tool for Web3 trading, data, and gateway management.
 
 ## Setup Protocol
 
@@ -46,6 +46,10 @@ Map user intent to the correct command:
 | "launch token", "create token" | Token Launch | `vibe bags-launch-token` |
 | "fees", "claim fees", "my positions" | Fee Management | `vibe bags-claim-fees`, `vibe bags-positions` |
 | "market data", "smart money", "analytics", "on-chain" | Data | `vibe data-provider` |
+| "tokens", "leaderboard", "price", "market cap" | Token Leaderboard | `vibe tokens`, `vibe token-info` |
+| "wallet", "balance", "address", "transactions" | Wallet | `vibe wallet-config`, `vibe wallet-address`, `vibe wallet-balance`, `vibe wallet-transactions` |
+| "gateway", "openclaw", "start agent", "trading bot" | OpenClaw Gateway | `vibe gateway-status`, `vibe gateway-start`, `vibe gateway-stop`, `vibe gateway-templates` |
+| "telegram bot", "telegram config" | Telegram | `vibe telegram-config` |
 
 ## Command Reference
 
@@ -76,16 +80,19 @@ vibe evm-swap --network base --from-asset eth --to-asset usdc --amount 0.1
 
 ### DeFi
 ```bash
-# Discover protocols
+# Discover protocols (Solana by default)
 vibe defi-discover
+vibe defi-discover --network solana
 
-# Get quote
+# Get quote (use "supply" not "lend")
 vibe defi-quote --action stake --token SOL --amount 1.0 --protocol marinade
+vibe defi-quote --action supply --token USDC --amount 100 --protocol solend
 
 # Execute deposit (returns unsigned tx)
 vibe defi-deposit --action stake --token SOL --amount 1.0 --protocol marinade
 
 # Actions: stake, supply, borrow, add_liquidity
+# NOTE: Use "supply" for lending — "lend" is NOT a valid action
 # Protocols: marinade, jito, solend, marginfi, kamino, orca, raydium
 ```
 
@@ -96,7 +103,7 @@ vibe bags-launch-token --name "My Token" --symbol MYT --description "A token" --
 
 ### Fee Management
 ```bash
-vibe bags-positions                              # View all positions
+vibe bags-positions                              # View all positions (requires wallet)
 vibe bags-claim-fees --token-mint <address>      # Claim fees
 ```
 
@@ -104,8 +111,52 @@ vibe bags-claim-fees --token-mint <address>      # Claim fees
 ```bash
 vibe data-provider --service nansen --route smart_money_netflows --payload '{"chains":["base"]}'
 vibe data-provider --service twitter --route search --payload '{"query":"ethereum"}'
+vibe data-provider --service blokiments --route smart_money_latest_buys --payload '{"chain":"base"}'
+vibe data-provider --service yahoo_finance --route get_tickers --payload '{"tickers":["BTC-USD","ETH-USD"]}'
 
-# Services: nansen, blokiments, twitter, yahoo_finance, pumpfun_scraper, fourmeme
+# Services and routes:
+# nansen: smart_money_netflows, smart_money_inflows, smart_money_outflows, smart_money_holdings
+# twitter: search, trending
+# blokiments: general_token_metrics, token_current_price, token_data, smart_money_latest_buys, smart_money_latest_big_buys
+# yahoo_finance: get_tickers, search, get_news, get_stock_module, get_sma, get_rsi, get_earnings_calendar, get_insider_trades
+```
+
+### Token Leaderboard (public — no auth needed)
+```bash
+vibe tokens                                      # Token leaderboard (sorted by market cap)
+vibe tokens --sort volume_24h --limit 10         # Top 10 by 24h volume
+vibe tokens --stats                              # Platform-wide stats
+vibe tokens --creators                           # Creator XP leaderboard
+vibe tokens --agents                             # Agent performance leaderboard
+vibe tokens --agents --sort fees_claimed         # Agents sorted by fees claimed
+vibe token-info So11111111111111111111111111111111111111112  # Single token detail
+
+# Sort fields: market_cap, volume_24h, price_change_24h, created_at, fees_claimed
+# Agent sort: roi_percent, fees_claimed, trades, tokens_launched
+```
+
+### Wallet (requires JWT auth — `vibe auth` first)
+```bash
+vibe wallet-config                               # Get wallet config (network, auto-confirm)
+vibe wallet-address --network base               # Get wallet address for network
+vibe wallet-balance --network base               # Get token balances
+vibe wallet-transactions --network base --limit 20  # Transaction history
+
+# Networks: base, ethereum, solana
+```
+
+### OpenClaw Gateway (requires JWT auth — `vibe auth` first)
+```bash
+vibe gateway-status                              # Get gateway status
+vibe gateway-templates                           # List available templates
+vibe gateway-start --template trader             # Start gateway with template
+vibe gateway-start --template degen --bot-token 123456:ABC  # Start with Telegram
+vibe gateway-stop                                # Stop gateway
+vibe gateway-logs                                # Stream gateway logs (Ctrl+C to stop)
+vibe telegram-config                             # Get Telegram config
+vibe telegram-config --bot-token 123456:ABC --enabled  # Set Telegram config
+
+# Templates: trader, shitcoin-trader, degen, analyst
 ```
 
 ## Output Format
@@ -131,6 +182,34 @@ vibe swap-quote -o json -f body.data --from-token ... --to-token ... --amount ..
 8. **Always quote JSON payloads** in shell — single quotes around the JSON string.
 9. **Run `vibe sync` before first use** in any session — the manifest must be cached locally.
 10. **`--amount` types differ** — Solana: integer (lamports), EVM: string (human-readable), DeFi: string (decimal).
+11. **DeFi action is `supply` not `lend`** — the valid actions are: stake, supply, borrow, add_liquidity.
+12. **EVM swap requires a connected wallet** — returns 400 if no wallet exists for the account on that network.
+13. **`bags-positions` requires a wallet** — returns empty if no wallet is linked.
+14. **Token leaderboard is public** — no auth needed for `vibe tokens` and `vibe token-info`.
+15. **Wallet and gateway commands require JWT auth** — use `vibe auth` to set up. Trial tokens only have read scope.
+16. **`defi-discover` accepts `--network`** — defaults to `solana`. Use `--network evm` for EVM DeFi.
+
+## Common Token Mints Reference
+
+### Solana
+| Token | Mint Address |
+|-------|-------------|
+| SOL | `So11111111111111111111111111111111111111112` |
+| USDC | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
+| USDT | `Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB` |
+| BONK | `DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263` |
+| JTO | `jtojtomepa8beP8AuQc6eXt5FrivrwYsowhRmLP4n38` |
+| JUP | `JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN` |
+| WIF | `EKpQGSJtjMFqWZL3YYqLwYQKaQoTsgEjbLqHfHq2CgJ3` |
+
+### EVM (Base/Ethereum)
+| Token | CDP Asset ID |
+|-------|-------------|
+| ETH | `eth` |
+| USDC | `usdc` |
+| DAI | `dai` |
+| WETH | `weth` |
+| Custom tokens | Full `0x` contract address |
 
 ## Auth and Quota Handling
 
@@ -138,7 +217,7 @@ vibe swap-quote -o json -f body.data --from-token ... --to-token ... --amount ..
 
 On error (exit code 4), check the error code:
 
-| Error Code | Meaning | Guide User To |
+| Error Code | Meaning | Guide User to |
 |-----------|---------|---------------|
 | `UNAUTHORIZED` | No valid API key | `vibe auth` or create key at vibe.airforce/settings/api-keys |
 | `FREE_QUOTA_EXHAUSTED` | Trial limit reached | Create API key at vibe.airforce/settings/api-keys |
@@ -150,7 +229,8 @@ On error (exit code 4), check the error code:
 ## API Reference
 
 - **Base URL:** `https://api.vibe.airforce/api/vibe-tools`
-- **Auth:** `Authorization: Bearer pk_xxx:sk_xxx` or `Authorization: Bearer trial_xxx`
+- **Auth (vibe-tools):** `Authorization: Bearer pk_xxx:sk_xxx` or `Authorization: Bearer trial_xxx`
+- **Auth (wallet/openclaw):** `Authorization: Bearer <supabase_jwt>` (obtained via `vibe auth`)
 - **Response envelope:** `{ "data": {...}, "meta": { "request_id": "...", "timestamp": "..." } }`
 - **Error envelope:** `{ "error": { "code": "...", "message": "..." }, "meta": {...} }`
 - **Error codes:** `UNAUTHORIZED`, `FORBIDDEN_SCOPE`, `NOT_FOUND`, `RATE_LIMITED`, `INSUFFICIENT_CREDITS`, `VALIDATION_ERROR`, `PROVIDER_ERROR`
