@@ -1,7 +1,7 @@
 ---
 name: vibe
 description: >
-  Your AI agent's Web3 trading brain. One skill, 33+ commands for DeFi trading,
+  Your AI agent's Web3 trading brain. One skill, 38+ commands for DeFi trading,
   token launches, data providers, wallet management, token leaderboard, OpenClaw gateway,
   EVM DeFi via Enso, Twitter/X API v2 integration, and cross-chain swap execution across Solana, Base, and Ethereum.
 metadata:
@@ -173,6 +173,23 @@ vibe data-provider --service twitter --route me --payload '{}'
 # Pricing: reads $0.005-0.01, writes $0.01-0.02 per call. Pay with web3 wallet credits.
 # Unlimited use, no rate limits on VIBE's end.
 # Auth modes: read works without connection, write requires X OAuth at vibe.airforce/settings/connections
+
+# New endpoints (v2.0):
+vibe data-provider --service twitter --route search_users --payload '{"query":"vibe","max_results":10}'
+vibe data-provider --service twitter --route get_user_by_id --payload '{"user_id":"123456"}'
+vibe data-provider --service twitter --route get_tweets_by_ids --payload '{"ids":"123,456,789"}'
+vibe data-provider --service twitter --route get_liked_tweets --payload '{"user_id":"123456","max_results":10}'
+vibe data-provider --service twitter --route get_retweets --payload '{"tweet_id":"123456","max_results":10}'
+vibe data-provider --service twitter --route get_retweeted_by --payload '{"tweet_id":"123456","max_results":100}'
+vibe data-provider --service twitter --route get_trends --payload '{"woeid":1}'
+vibe data-provider --service twitter --route get_personalized_trends --payload '{}'
+vibe data-provider --service twitter --route delete_bookmark --payload '{"tweet_id":"123456"}'
+vibe data-provider --service twitter --route block_user --payload '{"target_user_id":"123456"}'
+vibe data-provider --service twitter --route unblock_user --payload '{"target_user_id":"123456"}'
+vibe data-provider --service twitter --route get_blocked_users --payload '{"max_results":100}'
+vibe data-provider --service twitter --route mute_user --payload '{"target_user_id":"123456"}'
+vibe data-provider --service twitter --route unmute_user --payload '{"target_user_id":"123456"}'
+vibe data-provider --service twitter --route get_muted_users --payload '{"max_results":100}'
 ```
 
 ### Token Leaderboard (public — no auth needed)
