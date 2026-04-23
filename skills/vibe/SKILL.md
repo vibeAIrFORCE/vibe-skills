@@ -248,6 +248,8 @@ vibe swap-quote -o json -f body.data --from-token ... --to-token ... --amount ..
 19. **Twitter write endpoints need OAuth** — user must connect X at vibe.airforce/settings/connections first. Read endpoints work without connection.
 20. **Twitter user_timeline/mentions/followers/following need `user_id`** — not username. Get it via `get_user` first.
 21. **Twitter `search` returns last 7 days** — X API v2 recent search limitation.
+22. **Quote tweet 403** — If original tweet author restricted replies (to mentioned/followed users only), X also blocks quote tweets. Fall back to standalone tweet.
+23. **One cashtag per tweet** — X rejects tweets with multiple `$SYMBOL` cashtags. Use only one, or replace extras with plain text (e.g. "SOL" instead of "$SOL").
 
 ## Common Token Mints Reference
 
