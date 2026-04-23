@@ -1,11 +1,11 @@
 ---
 name: vibe
 description: >
-  Your AI agent's Web3 trading brain. One skill, 30+ commands for DeFi trading,
+  Your AI agent's Web3 trading brain. One skill, 33+ commands for DeFi trading,
   token launches, data providers, wallet management, token leaderboard, OpenClaw gateway,
-  EVM DeFi via Enso, and cross-chain swap execution across Solana, Base, and Ethereum.
+  EVM DeFi via Enso, Twitter/X API v2 integration, and cross-chain swap execution across Solana, Base, and Ethereum.
 metadata:
-  version: "0.2.2"
+  version: "0.2.3"
 tools:
   - bash
 ---
@@ -51,6 +51,7 @@ Map user intent to the correct command:
 | "wallet", "balance", "address", "transactions" | Wallet | `vibe wallet-config`, `vibe wallet-address`, `vibe wallet-balance`, `vibe wallet-transactions` |
 | "gateway", "openclaw", "start agent", "trading bot" | OpenClaw Gateway | `vibe gateway-status`, `vibe gateway-start`, `vibe gateway-stop`, `vibe gateway-templates` |
 | "telegram bot", "telegram config" | Telegram | `vibe telegram-config` |
+| "twitter", "tweet", "post", "search tweets", "like", "retweet", "follow" | Twitter/X | `vibe data-provider --service twitter` |
 
 ## Command Reference
 
@@ -136,9 +137,42 @@ vibe data-provider --service yahoo_finance --route get_tickers --payload '{"tick
 
 # Services and routes:
 # nansen: smart_money_netflows, smart_money_inflows, smart_money_outflows, smart_money_holdings
-# twitter: search, trending
 # blokiments: general_token_metrics, token_current_price, token_data, smart_money_latest_buys, smart_money_latest_big_buys
 # yahoo_finance: get_tickers, search, get_news, get_stock_module, get_sma, get_rsi, get_earnings_calendar, get_insider_trades
+```
+
+### Twitter/X (22 endpoints — X API v2 full access)
+```bash
+# Read endpoints (no Twitter connection needed)
+vibe data-provider --service twitter --route search --payload '{"query":"ethereum","max_results":10}'
+vibe data-provider --service twitter --route get_tweet --payload '{"tweet_id":"123456"}'
+vibe data-provider --service twitter --route get_user --payload '{"username":"vibe_ai_dev"}'
+vibe data-provider --service twitter --route user_timeline --payload '{"user_id":"123456","max_results":10}'
+vibe data-provider --service twitter --route user_mentions --payload '{"user_id":"123456","max_results":10}'
+vibe data-provider --service twitter --route followers --payload '{"user_id":"123456","max_results":100}'
+vibe data-provider --service twitter --route following --payload '{"user_id":"123456","max_results":100}'
+vibe data-provider --service twitter --route liking_users --payload '{"tweet_id":"123456","max_results":100}'
+vibe data-provider --service twitter --route quote_tweets --payload '{"tweet_id":"123456","max_results":10}'
+vibe data-provider --service twitter --route tweet_counts --payload '{"query":"ethereum","granularity":"day"}'
+vibe data-provider --service twitter --route trending --payload '{}'
+
+# Write endpoints (requires Twitter OAuth connected at vibe.airforce/settings/connections)
+vibe data-provider --service twitter --route create_tweet --payload '{"text":"Hello from VIBE!"}'
+vibe data-provider --service twitter --route delete_tweet --payload '{"tweet_id":"123456"}'
+vibe data-provider --service twitter --route like --payload '{"tweet_id":"123456"}'
+vibe data-provider --service twitter --route unlike --payload '{"tweet_id":"123456"}'
+vibe data-provider --service twitter --route retweet --payload '{"tweet_id":"123456"}'
+vibe data-provider --service twitter --route undo_retweet --payload '{"tweet_id":"123456"}'
+vibe data-provider --service twitter --route follow --payload '{"target_user_id":"123456"}'
+vibe data-provider --service twitter --route unfollow --payload '{"user_id":"123456"}'
+vibe data-provider --service twitter --route bookmark --payload '{"tweet_id":"123456"}'
+vibe data-provider --service twitter --route bookmarks --payload '{"max_results":10}'
+vibe data-provider --service twitter --route hide_reply --payload '{"tweet_id":"123456","hidden":true}'
+vibe data-provider --service twitter --route me --payload '{}'
+
+# Pricing: reads $0.005-0.01, writes $0.01-0.02 per call. Pay with web3 wallet credits.
+# Unlimited use, no rate limits on VIBE's end.
+# Auth modes: read works without connection, write requires X OAuth at vibe.airforce/settings/connections
 ```
 
 ### Token Leaderboard (public — no auth needed)
@@ -211,6 +245,9 @@ vibe swap-quote -o json -f body.data --from-token ... --to-token ... --amount ..
 16. **`defi-discover` accepts `--network`** — defaults to `solana`. Use `--network base` or `--network ethereum` for EVM DeFi via Enso Finance.
 17. **EVM DeFi vault addresses** — get them from `vibe defi-discover --network base`. The `address` field in results is the vault/pool contract for `--token-out`.
 18. **Enso supports 5 EVM chains** — base, ethereum, arbitrum, optimism, polygon. All use chain-specific vault addresses.
+19. **Twitter write endpoints need OAuth** — user must connect X at vibe.airforce/settings/connections first. Read endpoints work without connection.
+20. **Twitter user_timeline/mentions/followers/following need `user_id`** — not username. Get it via `get_user` first.
+21. **Twitter `search` returns last 7 days** — X API v2 recent search limitation.
 
 ## Common Token Mints Reference
 
