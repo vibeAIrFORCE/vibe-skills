@@ -5,7 +5,7 @@ description: >
   token launches, data providers, wallet management, token leaderboard, OpenClaw gateway,
   EVM DeFi via Enso, Twitter/X API v2 integration, and cross-chain swap execution across Solana, Base, and Ethereum.
 metadata:
-  version: "0.2.3"
+  version: "0.3.0"
 tools:
   - bash
 ---
@@ -49,6 +49,7 @@ Map user intent to the correct command:
 | "market data", "smart money", "analytics", "on-chain" | Data | `vibe data-provider` |
 | "tokens", "leaderboard", "price", "market cap" | Token Leaderboard | `vibe tokens`, `vibe token-info` |
 | "wallet", "balance", "address", "transactions" | Wallet | `vibe wallet-config`, `vibe wallet-address`, `vibe wallet-balance`, `vibe wallet-transactions` |
+| "credits", "top up", "balance low", "billing" | Credits | `vibe credits-balance`, `vibe credits-packages`, `vibe credits-agent-topup` |
 | "gateway", "openclaw", "start agent", "trading bot" | OpenClaw Gateway | `vibe gateway-status`, `vibe gateway-start`, `vibe gateway-stop`, `vibe gateway-templates` |
 | "telegram bot", "telegram config" | Telegram | `vibe telegram-config` |
 | "twitter", "tweet", "post", "search tweets", "like", "retweet", "follow" | Twitter/X | `vibe data-provider --service twitter` |
@@ -153,7 +154,7 @@ Behind the scenes, VIBE pays Nansen per endpoint tier. Both matter — if VIBE r
 - **Max 48 calls/day** (every 30 min) — that's already $0.48/day
 - **Pre-filter with DEXScreener (FREE)** before spending a single VIBE credit
 - **Cache results** — same call twice in 5 min = wasted $0.01
-- **Check credit balance first:** `GET /api/x402/credits`
+- **Check credit balance first:** `GET /api/vibe-tools/credits/balance` or `vibe credits-balance`
 
 ```bash
 vibe data-provider --service nansen --route smart_money_netflows --payload '{"chains":["base"]}'
@@ -243,6 +244,50 @@ vibe wallet-transactions --network base --limit 20  # Transaction history
 # Auth: works with API key (Bearer pk_xxx:sk_xxx) or JWT
 ```
 
+### Credits & Top-Up (API key auth)
+
+Check balance and autonomously top up credits using your agent wallet.
+
+```bash
+# Check credit balance
+vibe credits-balance
+
+# List available top-up packages
+vibe credits-packages
+
+# Autonomous top-up (swap + pay + credit in one call)
+vibe credits-agent-topup --amount 5.00
+```
+
+**Top-Up Packages:**
+
+| Package | Cost | Credits | Bonus |
+|---------|------|---------|-------|
+| Micro   | $5   | $5.00   | 0%    |
+| Small   | $10  | $10.00  | 0%    |
+| Medium  | $25  | $27.50  | +10%  |
+| Large   | $50  | $60.00  | +20%  |
+
+**How agent-topup works:**
+1. Server checks your wallet for USDC (on Solana or Base)
+2. If not enough USDC: auto-swaps SOL→USDC via Jupiter (Solana) or ETH→USDC via 0x (Base)
+3. Transfers USDC to VIBE platform wallet
+4. Adds credits to your balance
+
+**Top-Up Flow:**
+```bash
+# 1. Check credits
+vibe credits-balance
+# If low (< $3), proceed:
+
+# 2. Check wallet has funds
+vibe wallet-balance --network solana
+
+# 3. Execute top-up (server handles everything)
+vibe credits-agent-topup --amount 5.00
+# Response: {"success":true, "credits_added":5.00, "new_balance":6.55, "swap_performed":true}
+```
+
 ### OpenClaw Gateway (requires JWT auth — `vibe auth` first)
 ```bash
 vibe gateway-status                              # Get gateway status
@@ -293,6 +338,10 @@ vibe swap-quote -o json -f body.data --from-token ... --to-token ... --amount ..
 21. **Twitter `search` returns last 7 days** — X API v2 recent search limitation.
 22. **Quote tweet 403** — If original tweet author restricted replies (to mentioned/followed users only), X also blocks quote tweets. Fall back to standalone tweet.
 23. **One cashtag per tweet** — X rejects tweets with multiple `$SYMBOL` cashtags. Use only one, or replace extras with plain text (e.g. "SOL" instead of "$SOL").
+24. **Check credits before data-heavy work** — Every `data-provider` call costs $0.01. At 48 calls/day = $0.48/day. Check balance with `vibe credits-balance` at session start.
+25. **Low credits? Use agent-topup** — `vibe credits-agent-topup --amount 5.00` handles swap + transfer + credit in one call. Requires `gateway:wallet_write` scope.
+26. **agent-topup needs wallet funds** — If wallet has no SOL/USDC, top-up fails. Check `vibe wallet-balance --network solana` first.
+27. **Credit packages have bonuses** — Medium (+10%) and Large (+20%) give extra credits. Always prefer these over Micro/Small when funds allow.
 
 ## Common Token Mints Reference
 
