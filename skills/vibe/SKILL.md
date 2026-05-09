@@ -129,6 +129,32 @@ vibe bags-claim-fees --token-mint <address>      # Claim fees
 ```
 
 ### Data Providers
+
+**Nansen credit costs — READ BEFORE CALLING:**
+
+**You pay VIBE $0.01 per `data-provider` call** (1 cent USD). VIBE credits = dollars, 1:1.
+Behind the scenes, VIBE pays Nansen per endpoint tier. Both matter — if VIBE runs out of Nansen credits, calls fail for everyone.
+
+| Tier | Your cost | VIBE pays Nansen | Endpoints |
+|------|-----------|-----------------|-----------|
+| Basic | $0.01/call | $0.001 (1cr) | profiler balances/txns/PnL, tgm flows/transfers/dex trades/who_bought_sold/flow_intelligence, portfolio, points |
+| Premium | $0.01/call | $0.005 (5cr) | smart_money_*, tgm_token_screener, tgm_holders, tgm_pnl_leaderboard, profiler counterparties |
+| Labels | $0.01/call | $0.10-$0.50 (100-500cr) | profiler_labels — **25-125x VIBE's cost, will get rate-limited fast** |
+| Agent | $0.01/call | $0.20-$0.75 (200-750cr) | Nansen AI Agent — **DO NOT call without explicit user approval** |
+
+**Daily cost examples (at $0.01/call):**
+- 30min scan (48 calls/day) = **$0.48/day** — sustainable
+- 10min loop (144 calls/day) = **$1.44/day** — expensive
+- 5min loop (288 calls/day) = **$2.88/day** — burns $86/month on data alone
+- Retry loop (10 retries on failure) = **$0.10 wasted per failure**
+
+**ANTI-LOOP RULES:**
+- **NEVER call `data-provider` in a retry loop** — each retry costs $0.01 even on errors
+- **Max 48 calls/day** (every 30 min) — that's already $0.48/day
+- **Pre-filter with DEXScreener (FREE)** before spending a single VIBE credit
+- **Cache results** — same call twice in 5 min = wasted $0.01
+- **Check credit balance first:** `GET /api/x402/credits`
+
 ```bash
 vibe data-provider --service nansen --route smart_money_netflows --payload '{"chains":["base"]}'
 vibe data-provider --service twitter --route search --payload '{"query":"ethereum"}'
@@ -308,8 +334,8 @@ On error (exit code 4), check the error code:
 ## API Reference
 
 - **Base URL:** `https://api.vibe.airforce/api/vibe-tools`
-- **Auth (vibe-tools):** `Authorization: Bearer pk_xxx:sk_xxx` or `Authorization: Bearer trial_xxx`
-- **Auth (wallet via gateway):** `Authorization: Bearer pk_xxx:sk_xxx` (API key) or `Authorization: Bearer <supabase_jwt>`
+- **Auth (vibe-tools):** `x-api-key: pk_xxx:sk_xxx` or `x-api-key: trial_xxx` (also accepts `Authorization: Bearer`)
+- **Auth (wallet via gateway):** `x-api-key: pk_xxx:sk_xxx` (API key) or `Authorization: Bearer <supabase_jwt>`
 - **Auth (wallet/openclaw direct):** `Authorization: Bearer <supabase_jwt>` (obtained via `vibe auth`)
 - **Response envelope:** `{ "data": {...}, "meta": { "request_id": "...", "timestamp": "..." } }`
 - **Error envelope:** `{ "error": { "code": "...", "message": "..." }, "meta": {...} }`
