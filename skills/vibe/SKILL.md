@@ -1,11 +1,12 @@
 ---
 name: vibe
 description: >
-  Your AI agent's Web3 trading brain. One skill, 38+ commands for DeFi trading,
+  Your AI agent's Web3 trading brain. One skill, 40+ commands for DeFi trading,
   token launches, data providers, wallet management, token leaderboard, OpenClaw gateway,
-  EVM DeFi via Enso, Twitter/X API v2 integration, and cross-chain swap execution across Solana, Base, and Ethereum.
+  x402 marketplace publishing, EVM DeFi via Enso, Twitter/X API v2 integration,
+  and cross-chain swap execution across Solana, Base, and Ethereum.
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
 tools:
   - bash
 ---
@@ -50,6 +51,7 @@ Map user intent to the correct command:
 | "tokens", "leaderboard", "price", "market cap" | Token Leaderboard | `vibe tokens`, `vibe token-info` |
 | "wallet", "balance", "address", "transactions" | Wallet | `vibe wallet-config`, `vibe wallet-address`, `vibe wallet-balance`, `vibe wallet-transactions` |
 | "credits", "top up", "balance low", "billing" | Credits | `vibe credits-balance`, `vibe credits-packages`, `vibe credits-agent-topup` |
+| "sell data", "publish", "marketplace", "x402 seller", "monetize", "earnings" | x402 Marketplace | `vibe marketplace-profile`, `vibe marketplace-publish`, `vibe marketplace-catalog`, `vibe marketplace-earnings` |
 | "gateway", "openclaw", "start agent", "trading bot" | OpenClaw Gateway | `vibe gateway-status`, `vibe gateway-start`, `vibe gateway-stop`, `vibe gateway-templates` |
 | "telegram bot", "telegram config" | Telegram | `vibe telegram-config` |
 | "twitter", "tweet", "post", "search tweets", "like", "retweet", "follow" | Twitter/X | `vibe data-provider --service twitter` |
@@ -288,6 +290,60 @@ vibe credits-agent-topup --amount 5.00
 # Response: {"success":true, "credits_added":5.00, "new_balance":6.55, "swap_performed":true}
 ```
 
+### x402 Marketplace — Publish & Monetize
+
+Monetize agent intelligence by publishing data products to the x402 marketplace. These are direct HTTP API calls, not `vibe` CLI commands.
+
+```bash
+# Create a seller profile
+curl -X POST {VIBE_API_URL}/api/marketplace/profile \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: {VIBE_API_TOKEN}" \
+  -d '{"handle":"your-handle","display_name":"Your Name","bio":"What you offer","eth_address":"0x..."}'
+
+# Register an agent as x402 seller
+curl -X PUT {VIBE_API_URL}/api/agents/{agent_id}/x402 \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: {VIBE_API_TOKEN}" \
+  -d '{"enabled":true,"price_per_call_usdc":"0.50","description":"Service description"}'
+
+# View agent x402 config
+curl {VIBE_API_URL}/api/agents/{agent_id}/x402 \
+  -H "x-api-key: {VIBE_API_TOKEN}"
+
+# View agent earnings
+curl {VIBE_API_URL}/api/agents/x402/earnings \
+  -H "x-api-key: {VIBE_API_TOKEN}"
+
+# Publish data product to catalog
+curl -X PUT {VIBE_API_URL}/api/data-products/{product_id}/config \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: {VIBE_API_TOKEN}" \
+  -d '{"enabled":true,"price_usdc":"1.00","title":"Daily Report","description":"Description"}'
+
+# Browse marketplace catalog
+curl {VIBE_API_URL}/api/data-products/catalog \
+  -H "x-api-key: {VIBE_API_TOKEN}"
+
+# View data product earnings
+curl {VIBE_API_URL}/api/data-products/earnings \
+  -H "x-api-key: {VIBE_API_TOKEN}"
+
+# Create marketplace bundle
+curl -X POST {VIBE_API_URL}/api/marketplace/bundles/create \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: {VIBE_API_TOKEN}" \
+  -d '{"name":"Bundle Name","product_ids":["<id1>","<id2>"],"price_usdc":"5.00"}'
+```
+
+**Publishing Best Practices:**
+- **Recommend, don't auto-publish** — Present the product, price, and rationale. Let the human approve before publishing.
+- **Price based on signal quality** — High-frequency alpha (> daily) commands higher prices than weekly summaries.
+- **Know your costs** — Check `vibe credits-balance` to understand what data costs to produce before setting a price.
+- **Quality matters** — Stale or wrong data damages seller reputation. Verify before publishing.
+- **Bundle for value** — If two products sell together often, create a discounted bundle.
+- **Requires a connected wallet** — USDC payments flow through it. Check with `vibe wallet-config`.
+
 ### OpenClaw Gateway (requires JWT auth — `vibe auth` first)
 ```bash
 vibe gateway-status                              # Get gateway status
@@ -342,6 +398,9 @@ vibe swap-quote -o json -f body.data --from-token ... --to-token ... --amount ..
 25. **Low credits? Use agent-topup** — `vibe credits-agent-topup --amount 5.00` handles swap + transfer + credit in one call. Requires `gateway:wallet_write` scope.
 26. **agent-topup needs wallet funds** — If wallet has no SOL/USDC, top-up fails. Check `vibe wallet-balance --network solana` first.
 27. **Credit packages have bonuses** — Medium (+10%) and Large (+20%) give extra credits. Always prefer these over Micro/Small when funds allow.
+28. **Marketplace endpoints require `x-api-key` header** — these are direct HTTP API calls, not `vibe` CLI commands. Use `pk_xxx:sk_xxx` format or JWT `Bearer` token.
+29. **Don't auto-publish without approval** — publishing a data product with bad pricing or wrong data costs reputation. Present product + price + rationale first.
+30. **Marketplace needs a connected wallet** — USDC payments flow through your VIBE wallet. Set it up with `vibe wallet-config` first.
 
 ## Common Token Mints Reference
 
