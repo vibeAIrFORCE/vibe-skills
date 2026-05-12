@@ -14,7 +14,7 @@ The VIBE skill teaches AI coding agents (Claude Code, Codex) how to use the VIBE
 - Get swap quotes and execute trades on Solana (Jupiter/Meteora) and EVM (Base/Ethereum via 0x)
 - Discover DeFi protocols, get yield quotes, and execute deposits
 - Launch tokens on bags.fm and claim trading fees
-- Query external data providers (Nansen, Blokiments, Twitter)
+- Query external data providers (Nansen, Twitter)
 - Work without an API key for the first 30 requests/day (trial mode)
 
 ## Data Coverage
@@ -26,7 +26,7 @@ The VIBE skill teaches AI coding agents (Claude Code, Codex) how to use the VIBE
 | DeFi | `defi-discover`, `defi-quote`, `defi-deposit` |
 | Token Launch | `bags-launch-token` |
 | Fee Management | `bags-claim-fees`, `bags-positions` |
-| Data Providers | `data-provider` (Nansen, Twitter, Blokiments, etc.) |
+| Data Providers | `data-provider` (Nansen, Twitter, etc.) |
 
 ## Quick Reference
 

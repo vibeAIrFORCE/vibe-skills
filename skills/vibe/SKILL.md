@@ -161,12 +161,12 @@ Behind the scenes, VIBE pays Nansen per endpoint tier. Both matter — if VIBE r
 ```bash
 vibe data-provider --service nansen --route smart_money_netflows --payload '{"chains":["base"]}'
 vibe data-provider --service twitter --route search --payload '{"query":"ethereum"}'
-vibe data-provider --service blokiments --route smart_money_latest_buys --payload '{"chain":"base"}'
+
 vibe data-provider --service yahoo_finance --route get_tickers --payload '{"tickers":["BTC-USD","ETH-USD"]}'
 
 # Services and routes:
 # nansen: smart_money_netflows, smart_money_inflows, smart_money_outflows, smart_money_holdings
-# blokiments: general_token_metrics, token_current_price, token_data, smart_money_latest_buys, smart_money_latest_big_buys
+
 # yahoo_finance: get_tickers, search, get_news, get_stock_module, get_sma, get_rsi, get_earnings_calendar, get_insider_trades
 ```
 
