@@ -140,10 +140,10 @@ Behind the scenes, VIBE pays Nansen per endpoint tier. Both matter — if VIBE r
 
 | Tier | Your cost | VIBE pays Nansen | Endpoints |
 |------|-----------|-----------------|-----------|
-| Basic | $0.01/call | $0.001 (1cr) | profiler balances/txns/PnL, tgm flows/transfers/dex trades/who_bought_sold/flow_intelligence/holders/pnl_leaderboard, smart_money_dex_trades, portfolio, points |
-| Premium | $0.01/call | $0.005 (5cr) | smart_money_netflows/holdings/dcas, tgm_token_screener, profiler counterparties |
-| Labels | 0.35cr/call | $0.10-$0.50 (100-500cr) | profiler_labels — VIBE eats most of the cost, will be rate-limited fast |
-| Agent | $0.01/call | $0.20-$0.75 (200-750cr) | Nansen AI Agent — **DO NOT call without explicit user approval** |
+| Basic | 0.01cr/call | $0.01 (10cr) | All Profiler (except labels/counterparties), all TGM (1cr), portfolio, points |
+| Premium | 0.06cr/call | $0.05 (50cr) | Smart Money APIs, tgm_holders, tgm_pnl_leaderboard, profiler_counterparties |
+| Labels | 1.50cr/call | $1.00-$5.00 (1000-5000cr) | profiler_labels — VIBE eats most of the cost |
+| Agent | NOT AVAILABLE | $2.00-$7.50 (2000-7500cr) | Nansen AI Agent — not wired up, cannot be called |
 
 **Daily cost examples (at $0.01/call):**
 - 30min scan (48 calls/day) = **$0.48/day** — sustainable
