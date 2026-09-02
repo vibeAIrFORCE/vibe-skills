@@ -1,12 +1,14 @@
 ---
 name: vibe
 description: >
-  Your AI agent's Web3 trading brain. One skill, 40+ commands for DeFi trading,
-  token launches, data providers, wallet management, token leaderboard, OpenClaw gateway,
-  x402 marketplace publishing, EVM DeFi via Enso, Twitter/X API v2 integration,
-  and cross-chain swap execution across Solana, Base, and Ethereum.
+  Your AI agent's Web3 trading brain. One skill, 85 commands for DeFi trading
+  (Solana + EVM via Enso), perps on Hyperliquid, prediction markets on Polymarket,
+  token launches (bags.fm, pump.fun, Clanker), data providers, wallet management,
+  token leaderboard, Top Picks, OpenClaw gateway, x402 marketplace (call AND publish),
+  Enso Shield tx safety, Twitter/X API v2 integration, and cross-chain swap execution
+  across Solana, Base, Ethereum, and Robinhood Chain.
 metadata:
-  version: "0.4.0"
+  version: "0.5.1"
 tools:
   - bash
 ---
@@ -45,12 +47,20 @@ Map user intent to the correct command:
 | "swap on Base", "swap on Ethereum", "EVM trade" | EVM Trading | `vibe evm-swap-quote`, `vibe evm-swap` |
 | "stake", "lend", "yield", "DeFi" on Solana | DeFi (Solana) | `vibe defi-discover`, `vibe defi-quote`, `vibe defi-deposit` |
 | "park ETH", "earn yield on Base", "DeFi" on EVM | DeFi (EVM) | `vibe defi-discover --network base`, `vibe evm-defi-quote`, `vibe evm-defi-deposit` |
-| "launch token", "create token" | Token Launch | `vibe bags-launch-token` |
-| "fees", "claim fees", "my positions" | Fee Management | `vibe bags-claim-fees`, `vibe bags-positions` |
+| "bridge", "borrow", "repay", "migrate position", "add liquidity", "LP", "withdraw" on EVM | DeFi (EVM advanced) | `vibe evm-defi-bridge`, `vibe evm-defi-borrow`, `vibe evm-defi-migrate`, `vibe evm-defi-lp-deposit`, `vibe evm-defi-withdraw`, `vibe evm-defi-bundle` |
+| "perps", "leverage", "short", "long", "funding", "Hyperliquid" | Perps (Hyperliquid) | `vibe hyperliquid-info`, `vibe hyperliquid-mids`, `vibe hyperliquid-place-order`, `vibe hyperliquid-portfolio` |
+| "prediction market", "Polymarket", "odds", "arbitrage" | Prediction Markets | `vibe pmxt-search`, `vibe pmxt-quote`, `vibe pmxt-order`, `vibe pmxt-arbitrage` |
+| "launch token", "create token" (Solana) | Token Launch | `vibe bags-launch-token`, `vibe pump-create-coin` |
+| "deploy token on Base", "ERC-20 launch", "Clanker" | Token Launch (EVM) | `vibe clanker-deploy`, `vibe clanker-rewards` |
+| "fees", "claim fees", "my positions" | Fee Management | `vibe bags-claim-fees`, `vibe pump-claim-fees`, `vibe clanker-rewards`, `vibe pump-positions` |
 | "market data", "smart money", "analytics", "on-chain" | Data | `vibe data-provider` |
 | "tokens", "leaderboard", "price", "market cap" | Token Leaderboard | `vibe tokens`, `vibe token-info` |
+| "top picks", "smart money picks", "what to buy" | Top Picks | `vibe top-picks` |
+| "token price", "how much is X worth" | Price | `vibe evm-token-price` |
+| "simulate tx", "is this tx safe", "MEV", "tamper" | Safety Shields | `vibe shield-simulate`, `vibe shield-validate` |
 | "wallet", "balance", "address", "transactions" | Wallet | `vibe wallet-config`, `vibe wallet-address`, `vibe wallet-balance`, `vibe wallet-transactions` |
 | "credits", "top up", "balance low", "billing" | Credits | `vibe credits-balance`, `vibe credits-packages`, `vibe credits-agent-topup` |
+| "buy data", "call x402", "pay for API", "spending" | x402 Client | `vibe x402-discover`, `vibe x402-call`, `vibe x402-spending` |
 | "sell data", "publish", "marketplace", "x402 seller", "monetize", "earnings" | x402 Marketplace | `vibe marketplace-profile`, `vibe marketplace-publish`, `vibe marketplace-catalog`, `vibe marketplace-earnings` |
 | "gateway", "openclaw", "start agent", "trading bot" | OpenClaw Gateway | `vibe gateway-status`, `vibe gateway-start`, `vibe gateway-stop`, `vibe gateway-templates` |
 | "telegram bot", "telegram config" | Telegram | `vibe telegram-config` |
@@ -118,17 +128,91 @@ vibe evm-defi-deposit --network base --token-in eth --token-out <vault_address> 
 # token-in: 'eth' for native, or 0x contract address
 # token-out: vault/pool contract address from defi-discover results
 # Filters: --min-apy, --min-tvl, --project, --page-size
+
+# Full EVM DeFi suite (all via Enso, all return unsigned tx unless noted):
+vibe evm-defi-withdraw    --network base --amount 0.1   # exit a vault/lending position
+vibe evm-defi-bridge      --network base --to-chain polygon  # bridge tokens between EVM chains
+vibe evm-defi-borrow      --network base                 # borrow via Enso Bundle
+vibe evm-defi-repay       --network base                 # repay a borrow via Enso Bundle
+vibe evm-defi-migrate     --network base                 # move a position between protocols/vaults
+vibe evm-defi-lp-deposit  --network base                 # add liquidity to a pool
+vibe evm-defi-lp-withdraw --network base                 # remove liquidity
+vibe evm-defi-bundle      --network base                 # MULTIPLE actions atomically (one tx)
+vibe defi-nontokenized                                  # staking/farming positions without LP tokens
+vibe evm-token-price --network base --token <0xaddr>   # ERC-20 price in USD via Enso
 ```
 
-### Token Launch (bags.fm)
+### Safety Shields (Enso Shield)
+```bash
+# Simulate a DeFi tx on a forked EVM BEFORE broadcasting
+vibe shield-simulate
+
+# Validate tx integrity — tamper/MEV detection
+vibe shield-validate
+```
+RECOMMENDED for any high-value EVM DeFi action: simulate first, validate, then broadcast.
+
+### Perps (Hyperliquid)
+```bash
+# Auth: get the VIBE wallet EVM address for EIP-712 signing
+vibe hyperliquid-auth
+
+# Read (all query types via raw /info)
+vibe hyperliquid-info --body '{"type":"clearinghouseState","user":"<addr>"}'
+vibe hyperliquid-mids                              # mid prices, ~340 assets
+vibe hyperliquid-orderbook --coin BTC              # L2 top-20 per side
+vibe hyperliquid-candles --coin BTC --interval 1h
+vibe hyperliquid-fills --user <addr>               # recent fills (up to 2000)
+vibe hyperliquid-orders --user <addr>              # open orders
+vibe hyperliquid-portfolio --user <addr>           # account value, PnL by day/week/month
+
+# Write (EIP-712 signed via the wallet)
+vibe hyperliquid-place-order --coin BTC --side buy --size 0.01 --price 50000  # limit or trigger
+vibe hyperliquid-cancel --coin BTC --oid 123
+vibe hyperliquid-cancel-all                        # dead man's switch
+vibe hyperliquid-set-leverage --coin BTC --leverage 5
+```
+
+### Prediction Markets (Polymarket via PMXT)
+```bash
+vibe pmxt-search --keyword "fed rate"              # find markets
+vibe pmxt-quote --market <id>                      # midpoint + spread
+vibe pmxt-orderbook --market <id>                  # depth
+vibe pmxt-compare                                  # prices across exchanges
+vibe pmxt-arbitrage                                # scan for arb opportunities
+vibe pmxt-balance                                  # USDC balance on Polymarket
+vibe pmxt-positions                                # open positions
+vibe pmxt-portfolio                                # balance + PnL summary
+vibe pmxt-order --market <id> --side buy --amount 10  # limit or market
+vibe pmxt-deposit --amount 50                      # deposit USDC via Bridge API
+```
+
+### Token Launch (bags.fm + pump.fun — Solana)
 ```bash
 vibe bags-launch-token --name "My Token" --symbol MYT --description "A token" --image-url https://...
+vibe pump-create-coin --name "My Coin" --symbol MYC   # pump.fun coin
+vibe pump-swap                                        # swap on pump.fun
+vibe pump-coin-info                                   # coin info
+```
+
+### Token Launch (Clanker — EVM)
+```bash
+vibe clanker-deploy --name "My Token" --symbol MYT    # ERC-20 on EVM chains (80/20 fee split)
+vibe clanker-deployments                              # your deployments
+vibe clanker-rewards                                  # check/claim LP fee rewards
+vibe clanker-vault                                    # vault balance / claim vaulted tokens
+vibe clanker-update-image --token <addr> --image <url>
+vibe clanker-update-metadata --token <addr>
+vibe clanker-airdrop --token <addr>                   # Merkle airdrop registration
 ```
 
 ### Fee Management
 ```bash
 vibe bags-positions                              # View all positions (requires wallet)
-vibe bags-claim-fees --token-mint <address>      # Claim fees
+vibe bags-claim-fees --token-mint <address>      # Claim bags.fm fees
+vibe pump-claim-fees                             # Claim pump.fun fees
+vibe pump-fee-sharing                            # Configure pump.fun fee sharing
+vibe pump-positions                              # pump.fun positions
 ```
 
 ### Data Providers
@@ -180,8 +264,8 @@ vibe data-provider --service twitter --route user_timeline --payload '{"user_id"
 vibe data-provider --service twitter --route user_mentions --payload '{"user_id":"123456","max_results":10}'
 vibe data-provider --service twitter --route followers --payload '{"user_id":"123456","max_results":100}'
 vibe data-provider --service twitter --route following --payload '{"user_id":"123456","max_results":100}'
-vibe data-provider --service twitter --route liking_users --payload '{"tweet_id":"123456","max_results":100}'
-vibe data-provider --service twitter --route quote_tweets --payload '{"tweet_id":"123456","max_results":10}'
+vibe data-provider --service twitter --route liking_users --payload '{"tweet_id":"123456"}'
+vibe data-provider --service twitter --route quote_tweets --payload '{"tweet_id":"123456"}'
 vibe data-provider --service twitter --route tweet_counts --payload '{"query":"ethereum","granularity":"day"}'
 vibe data-provider --service twitter --route trending --payload '{}'
 
@@ -203,13 +287,13 @@ vibe data-provider --service twitter --route me --payload '{}'
 # Unlimited use, no rate limits on VIBE's end.
 # Auth modes: read works without connection, write requires X OAuth at vibe.airforce/settings/connections
 
-# New endpoints (v2.0):
+# More read endpoints (v2.0):
 vibe data-provider --service twitter --route search_users --payload '{"query":"vibe","max_results":10}'
 vibe data-provider --service twitter --route get_user_by_id --payload '{"user_id":"123456"}'
 vibe data-provider --service twitter --route get_tweets_by_ids --payload '{"ids":"123,456,789"}'
-vibe data-provider --service twitter --route get_liked_tweets --payload '{"user_id":"123456","max_results":10}'
-vibe data-provider --service twitter --route get_retweets --payload '{"tweet_id":"123456","max_results":10}'
-vibe data-provider --service twitter --route get_retweeted_by --payload '{"tweet_id":"123456","max_results":100}'
+vibe data-provider --service twitter --route get_liked_tweets --payload '{"user_id":"123456"}'
+vibe data-provider --service twitter --route get_retweets --payload '{"tweet_id":"123456"}'
+vibe data-provider --service twitter --route get_retweeted_by --payload '{"tweet_id":"123456"}'
 vibe data-provider --service twitter --route get_trends --payload '{"woeid":1}'
 vibe data-provider --service twitter --route get_personalized_trends --payload '{}'
 vibe data-provider --service twitter --route delete_bookmark --payload '{"tweet_id":"123456"}'
@@ -221,7 +305,7 @@ vibe data-provider --service twitter --route unmute_user --payload '{"target_use
 vibe data-provider --service twitter --route get_muted_users --payload '{"max_results":100}'
 ```
 
-### Token Leaderboard (public — no auth needed)
+### Token Leaderboard + Top Picks (public — no auth needed)
 ```bash
 vibe tokens                                      # Token leaderboard (sorted by market cap)
 vibe tokens --sort volume_24h --limit 10         # Top 10 by 24h volume
@@ -230,6 +314,7 @@ vibe tokens --creators                           # Creator XP leaderboard
 vibe tokens --agents                             # Agent performance leaderboard
 vibe tokens --agents --sort fees_claimed         # Agents sorted by fees claimed
 vibe token-info So11111111111111111111111111111111111111112  # Single token detail
+vibe top-picks                                   # Top 3 smart money tokens per chain (VIBE Score)
 
 # Sort fields: market_cap, volume_24h, price_change_24h, created_at, fees_claimed
 # Agent sort: roi_percent, fees_claimed, trades, tokens_launched
@@ -242,7 +327,7 @@ vibe wallet-address --network base               # Get wallet address for networ
 vibe wallet-balance --network base               # Get token balances
 vibe wallet-transactions --network base --limit 20  # Transaction history
 
-# Networks: base, base-sepolia, base-mainnet, ethereum, solana, solana-mainnet
+# Networks: base, base-sepolia, base-mainnet, ethereum, solana, solana-mainnet, robinhood
 # Auth: works with API key (Bearer pk_xxx:sk_xxx) or JWT
 ```
 
@@ -288,6 +373,13 @@ vibe wallet-balance --network solana
 # 3. Execute top-up (server handles everything)
 vibe credits-agent-topup --amount 5.00
 # Response: {"success":true, "credits_added":5.00, "new_balance":6.55, "swap_performed":true}
+```
+
+### x402 — Call Paid Services (USDC over HTTP 402)
+```bash
+vibe x402-discover                               # Discover x402 services (Coinbase Bazaar + Orbis)
+vibe x402-call --url <service_url>               # Call a paid endpoint — automatic USDC payment on Base
+vibe x402-spending                               # Spending summary + tx history
 ```
 
 ### x402 Marketplace — Publish & Monetize
@@ -374,7 +466,7 @@ vibe swap-quote -o json -f body.data --from-token ... --to-token ... --amount ..
 1. **Solana amounts are in lamports** — multiply by 10^9. `1 SOL = 1000000000 lamports`. EVM amounts are human-readable: `0.1 ETH`.
 2. **Solana swaps return unsigned transactions** — the client must sign before broadcasting. EVM swaps execute directly via CDP managed wallet (no client signing).
 3. **`gateway:wallet_write` scope required** for: `swap`, `evm-swap`, `defi-deposit`, `evm-defi-deposit`, `bags-launch-token`, `bags-claim-fees`. Without it, you get 403.
-4. **Network names** — must be: `solana`/`solana-mainnet`, `base`, `ethereum`. Never `eth`, `sol`, `basescan`.
+4. **Network names** — must be: `solana`/`solana-mainnet`, `base`, `ethereum`, `robinhood`. Never `eth`, `sol`, `basescan`.
 5. **`data-provider` requires both `--service` and `--route`** — check `vibe data-provider --help` for valid combinations.
 6. **Solana token addresses are base58** — 32-44 chars, not hex `0x...`. EVM uses hex addresses with `0x` prefix.
 7. **EVM assets use CDP IDs** — `eth`, `usdc`, `base-eth`. For custom tokens, use the full `0x` contract address.
@@ -401,6 +493,13 @@ vibe swap-quote -o json -f body.data --from-token ... --to-token ... --amount ..
 28. **Marketplace endpoints require `x-api-key` header** — these are direct HTTP API calls, not `vibe` CLI commands. Use `pk_xxx:sk_xxx` format or JWT `Bearer` token.
 29. **Don't auto-publish without approval** — publishing a data product with bad pricing or wrong data costs reputation. Present product + price + rationale first.
 30. **Marketplace needs a connected wallet** — USDC payments flow through your VIBE wallet. Set it up with `vibe wallet-config` first.
+31. **Enso Bundle = atomic** — `vibe evm-defi-bundle` executes multiple DeFi actions in ONE tx; if any step reverts, all revert. Use it for multi-step strategies.
+32. **Hyperliquid signing** — `hyperliquid-auth` returns the VIBE wallet's EVM address used for EIP-712 signing; use it as the `user` for read endpoints.
+33. **Hyperliquid cancel-all is a dead man's switch** — it cancels EVERY open order for the wallet. Confirm before running.
+34. **Shield before broadcast** — for high-value EVM DeFi actions, `vibe shield-simulate` (forked-chain sim) + `vibe shield-validate` (tamper/MEV) before executing.
+35. **Polymarket orders are USDC-denominated** — check `vibe pmxt-balance` first; deposits go via the Bridge API (`vibe pmxt-deposit`).
+36. **Robinhood Chain is wallet-read** — `vibe wallet-address --network robinhood` and balances work; EVM trading on RH is not enabled yet.
+37. **Trial mode** — no API key needed for the first 30 requests/day (read-only). Get a trial token: `vibe trial-auth`.
 
 ## Common Token Mints Reference
 
