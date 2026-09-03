@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-03T06:23:20.540313Z",
+  "generator": "eyebrow/0.4.3",
+  "artifacts": [
+    {
+      "id": "15f171a6228549bb",
+      "tool": "claude-code",
+      "scope": "project:.",
+      "type": "context",
+      "name": "CLAUDE.md",
+      "source": {
+        "kind": "local",
+        "ref": "CLAUDE.md"
+      },
+      "capabilities": {},
+      "files": [
+        {
+          "path": "CLAUDE.md",
+          "hash": "0777a1cea465b252004d2da3cdf490b46911093a334ed13e33f3e977a1a42207"
+        }
+      ],
+      "contentHash": "sha256-df27b60360da92d949b5891fe8ef95e62e9e594cf4005fed81efe589ad3554f8",
+      "discoveredFrom": "CLAUDE.md"
+    },
+    {
+      "id": "1712ff4e48cf28d9",
+      "tool": "skills-lock",
+      "scope": "project:.",
+      "type": "skill",
+      "name": "vibe",
+      "source": {
+        "kind": "local",
+        "ref": "skills/vibe"
+      },
+      "capabilities": {
+        "network": [
+          "api.vibe.airforce"
+        ]
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "hash": "04a0147479c38e720240186e863046a0d62923086dd193890d4168fbc30d4a97"
+        }
+      ],
+      "findings": [
+        {
+          "ruleId": "RCE-PIPE-EXEC",
+          "severity": "critical",
+          "owasp": "ASK-01",
+          "file": "SKILL.md",
+          "line": 25,
+          "snippet": "2. If not installed: `curl -fsSL https://api.vibe.airforce/api/cli/install.sh | sh`",
+          "explanation": "downloads and executes remote code via a pipe to a shell"
+        }
+      ],
+      "contentHash": "sha256-8ddb6306b94a8ead5c96f7eb4890241f8942353cb058eac8faa00fce3206de61",
+      "discoveredFrom": "skills/vibe/SKILL.md"
+    }
+  ]
+}
