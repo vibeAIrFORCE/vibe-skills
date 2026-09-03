@@ -1,0 +1,95 @@
+name: ci-skill-integrity
+
+# Capability-integrity gate for the vibe skill catalog.
+#
+# The skill file teaches an agent to run the `vibe` CLI: real trades, wallet
+# moves, token launches. Its trust rests on one line that installs the CLI
+# straight from the network (`curl ... | sh`). Nothing in this repo notices if
+# that line, or any other reach in the skill, changes AFTER review — an added
+# exfil endpoint, a swapped install host. That post-admission edit is the
+# classic supply-chain "rug pull", and team-auto-approve.yml approves PRs on
+# sight, so a status check is the real guard.
+#
+# eyebrow closes that gap WITHOUT becoming a noisy gate. eyebrowlock.json
+# fingerprints every skills/<slug>/SKILL.md: its content hash AND its declared
+# egress (the hosts it reaches from curl / wget / WebFetch lines). Per
+# eyebrow.policy.json this job fails only when a skill, relative to the lockfile:
+#   - gains new reach (a new egress host), or
+#   - introduces a new CRITICAL finding.
+# A skill's wording can change freely (allowContentDrift) — prose edits are
+# reported but do not fail the build. That is deliberate: this catalog reworks
+# its 85-command guidance constantly, and a gate that fired on every byte would
+# be switched off within a week.
+#
+# The current install line (`curl ... | sh`) already reads as a critical
+# pipe-to-shell finding. eyebrow records it in the lockfile as the accepted
+# baseline, so the gate does not block on it — it blocks only on reach or
+# criticals that appear LATER. Pinning that installer by checksum would let the
+# baseline finding be retired; until then this gate holds the line around it.
+#
+# Scope, stated honestly: the egress parser is line-based and host-granular. A
+# URL split across lines, assembled from shell vars, or a new PATH on an
+# already-listed host is not caught here. This gate is defense-in-depth for the
+# common shape (a new endpoint on a call line), not a parser of everything bash
+# can do. See docs/skill-integrity.md.
+#
+# Refresh the lockfile when a skill legitimately changes its reach:
+#   eyebrow scan --path . --lockfile eyebrowlock.json
+# and commit eyebrowlock.json in the same PR. The diff on that file is the audit
+# trail of what reach changed and who approved it.
+#
+# The action is pinned by commit SHA (immutable); the `version` input selects
+# the eyebrow release to install, and its published checksums guard the download
+# in transit. eyebrow.policy.json is picked up automatically (the action's
+# default --policy path).
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'CLAUDE.md'
+      - 'eyebrowlock.json'
+      - '.github/workflows/ci-skill-integrity.yml'
+      - 'eyebrow.policy.json'
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - 'CLAUDE.md'
+      - 'eyebrowlock.json'
+      - 'eyebrow.policy.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Cancel a superseded in-progress run when a newer commit is pushed to the same
+# PR. Never cancels push/main runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # A skill added without regenerating the lockfile would otherwise be
+      # silently ungated (drift is advisory by policy, and a brand-new skill has
+      # no baseline to expand against). This makes coverage itself a hard gate.
+      - name: lockfile covers every skill
+        run: |
+          missing=0
+          for f in skills/*/SKILL.md; do
+            slug=$(basename "$(dirname "$f")")
+            grep -q "\"discoveredFrom\": \"skills/$slug/SKILL.md\"" eyebrowlock.json || {
+              echo "::error::skills/$slug has no eyebrowlock.json entry — run: eyebrow scan --path . --lockfile eyebrowlock.json and commit the result"
+              missing=1
+            }
+          done
+          exit "$missing"
+      - name: eyebrow verify (drift / rug-pull gate)
+        uses: alexverify/eyebrow/action@66f2f1f917cdb70067d0e862d55a1551cb5bf23e # v0.4.3
+        with:
+          version: v0.4.3
+          path: .
+          lockfile: eyebrowlock.json
