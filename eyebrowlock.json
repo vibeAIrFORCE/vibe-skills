@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-09-03T06:23:20.540313Z",
+  "generatedAt": "2026-09-04T08:27:24.993735953Z",
   "generator": "eyebrow/0.4.3",
   "artifacts": [
     {
@@ -41,21 +41,10 @@
       "files": [
         {
           "path": "SKILL.md",
-          "hash": "04a0147479c38e720240186e863046a0d62923086dd193890d4168fbc30d4a97"
+          "hash": "41e13f1774792e68dbfd3161fd028c301c99a1e9a4b2ccb21a61354602e21f3b"
         }
       ],
-      "findings": [
-        {
-          "ruleId": "RCE-PIPE-EXEC",
-          "severity": "critical",
-          "owasp": "ASK-01",
-          "file": "SKILL.md",
-          "line": 25,
-          "snippet": "2. If not installed: `curl -fsSL https://api.vibe.airforce/api/cli/install.sh | sh`",
-          "explanation": "downloads and executes remote code via a pipe to a shell"
-        }
-      ],
-      "contentHash": "sha256-8ddb6306b94a8ead5c96f7eb4890241f8942353cb058eac8faa00fce3206de61",
+      "contentHash": "sha256-b8c4bd57868dd016b0f18744bd410788a933ecf12395603ed7a7b149f5945941",
       "discoveredFrom": "skills/vibe/SKILL.md"
     }
   ]

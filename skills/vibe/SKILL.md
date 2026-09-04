@@ -22,7 +22,16 @@ You have access to the VIBE CLI (`vibe`), a command-line tool for Web3 trading, 
 ALWAYS run these at the start of every session:
 
 1. Check CLI is installed: `which vibe`
-2. If not installed: `curl -fsSL https://api.vibe.airforce/api/cli/install.sh | sh`
+2. If not installed — checksum-pinned install (fetch, verify sha256, then run; nothing pipes to a shell):
+
+```bash
+( set -e; d="$(mktemp -d)"; trap 'rm -rf "$d"' EXIT; curl -fsSL https://api.vibe.airforce/cli/install.sh -o "$d/install.sh"; printf '%s  install.sh\n' efb5b965f90aec2a519a51a758ce75f204f63e15c6c43c58ea67c15a7ef480f8 | (cd "$d" && { sha256sum -c - >/dev/null 2>&1 || shasum -a 256 -c - >/dev/null 2>&1; }); sh "$d/install.sh" )
+```
+
+   Aborts before any execution on download failure, hash mismatch, or a missing
+   sha256 utility (sha256sum on Linux, shasum on macOS). Re-pin discipline: when
+   the installer changes, this hash, the served `install.sh.sha256` sidecar, and
+   the pinned parity test change in the same release.
 3. Sync manifest: `vibe sync`
 4. Check version matches `metadata.version` above. If outdated: `vibe install`
 
