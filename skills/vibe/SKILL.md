@@ -557,6 +557,28 @@ On error (exit code 4), check the error code:
 - **Error envelope:** `{ "error": { "code": "...", "message": "..." }, "meta": {...} }`
 - **Error codes:** `UNAUTHORIZED`, `FORBIDDEN_SCOPE`, `NOT_FOUND`, `RATE_LIMITED`, `INSUFFICIENT_CREDITS`, `VALIDATION_ERROR`, `PROVIDER_ERROR`
 
+## Agent Sites (deploy a static website)
+Publish a static site (html/css/js/images) to a permanent public URL at
+`{slug}-{acct6}.vibe.airforce`. These are direct HTTP calls, not `vibe` CLI commands.
+```bash
+# 1. Tarball the static dir (run -C from OUTSIDE the dir so index.html is at the tarball root)
+tar -czf /tmp/site.tgz -C /path/to/static-dir .
+# 2. Deploy — same name redeploys/updates the same site
+curl -X POST "{VIBE_API_URL}/api/vibe-tools/sites/deploy?name=my-site" \
+  -H "x-api-key: {VIBE_API_TOKEN}" \
+  -H "Content-Type: application/x-tar+gzip" \
+  --data-binary @/tmp/site.tgz
+# Response: {url, pages_dev_url, project, files, bytes}
+# 3. List your sites
+curl "{VIBE_API_URL}/api/vibe-tools/sites" -H "x-api-key: {VIBE_API_TOKEN}"
+# 4. Delete a site (permanent — confirm with the user first)
+curl -X DELETE "{VIBE_API_URL}/api/vibe-tools/sites/my-site" -H "x-api-key: {VIBE_API_TOKEN}"
+```
+- **Name:** `[a-z0-9-]`, max 30 chars (reserved: www, api, app, admin).
+- **Caps:** tarball ≤20MB, ≤2000 files, static-asset extensions only, no symlinks/`..` paths.
+- **x-api-key format:** `pk_xxx:sk_xxx` (same as other vibe-tools calls).
+- **New domains DNS/SSL-wait ~1-2 min on first visit** — poll `curl -sI` until HTTP 200.
+
 ## Feedback
 
 If the user is dissatisfied with results or data is missing:
