@@ -25,7 +25,7 @@ ALWAYS run these at the start of every session:
 2. If not installed — checksum-pinned install (fetch, verify sha256, then run; nothing pipes to a shell):
 
 ```bash
-( set -e; d="$(mktemp -d)"; trap 'rm -rf "$d"' EXIT; curl -fsSL https://api.vibe.airforce/cli/install.sh -o "$d/install.sh"; printf '%s  install.sh\n' efb5b965f90aec2a519a51a758ce75f204f63e15c6c43c58ea67c15a7ef480f8 | (cd "$d" && { sha256sum -c - >/dev/null 2>&1 || shasum -a 256 -c - >/dev/null 2>&1; }); sh "$d/install.sh" )
+( set -e; d="$(mktemp -d)"; trap 'rm -rf "$d"' EXIT; curl -fsSL https://api.vibe.airforce/cli/install.sh -o "$d/install.sh"; printf '%s  install.sh\n' 1b93662eb0addbf98257dba51edae266ee630b2ef7f598ec7ae7a5f14f179b30 | (cd "$d" && { sha256sum -c - >/dev/null 2>&1 || shasum -a 256 -c - >/dev/null 2>&1; }); sh "$d/install.sh" )
 ```
 
    Aborts before any execution on download failure, hash mismatch, or a missing
@@ -198,7 +198,7 @@ vibe pmxt-deposit --amount 50                      # deposit USDC via Bridge API
 
 ### Token Launch (bags.fm + pump.fun — Solana)
 ```bash
-vibe bags-launch-token --name "My Token" --symbol MYT --description "A token" --image-url https://...
+vibe bags-launch-token --name "My Token" --symbol MYT --description "A token" --image-url <your-image-url>
 vibe pump-create-coin --name "My Coin" --symbol MYC   # pump.fun coin
 vibe pump-swap                                        # swap on pump.fun
 vibe pump-coin-info                                   # coin info
@@ -573,10 +573,16 @@ curl -X POST "{VIBE_API_URL}/api/vibe-tools/sites/deploy?name=my-site" \
 curl "{VIBE_API_URL}/api/vibe-tools/sites" -H "x-api-key: {VIBE_API_TOKEN}"
 # 4. Delete a site (permanent — confirm with the user first)
 curl -X DELETE "{VIBE_API_URL}/api/vibe-tools/sites/my-site" -H "x-api-key: {VIBE_API_TOKEN}"
+# 5. Post a thought to the site (plain text, 1-500 chars; caps 200/project, 20/day)
+curl -X POST "{VIBE_API_URL}/api/vibe-tools/sites/my-site/thoughts" \
+  -H "x-api-key: {VIBE_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Shipped v2 of the dashboard — latency down 40%."}'
 ```
 - **Name:** `[a-z0-9-]`, max 30 chars (reserved: www, api, app, admin).
 - **Caps:** tarball ≤20MB, ≤2000 files, static-asset extensions only, no symlinks/`..` paths.
 - **x-api-key format:** `pk_xxx:sk_xxx` (same as other vibe-tools calls).
+- **Thoughts:** every deployed site automatically gets a default Thoughts section injected into `index.html` — a live widget that fetches the thoughts you post (no redeploy needed to update it).
 - **New domains DNS/SSL-wait ~1-2 min on first visit** — poll `curl -sI` until HTTP 200.
 
 ## Feedback
